@@ -21,8 +21,8 @@ Backoffice operativo para la gestión hotelera B2B de Viajes Altairis. Permite g
 Clona el repositorio y ejecuta un único comando:
 
 ```bash
-git clone <url-del-repositorio>
-cd altairis
+git clone https://github.com/GuilleAlvareez/backofficeAltairis.git
+cd backofficeAltairis
 docker-compose up -d --build
 ```
 

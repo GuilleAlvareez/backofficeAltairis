@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 interface HotelForm {
   name: string;
@@ -21,7 +21,7 @@ interface FormErrors {
 }
 
 export function useHotelForm(initial?: any) {
-  const [form, setForm] = useState<HotelForm>({
+  const formRef = useRef<HotelForm>({
     name: initial?.name ?? "",
     country: initial?.country ?? "",
     city: initial?.city ?? "",
@@ -32,10 +32,13 @@ export function useHotelForm(initial?: any) {
     email: initial?.email ?? "",
     active: initial?.active ?? true,
   });
+
+  const [form, setForm] = useState<HotelForm>(formRef.current);
   const [errors, setErrors] = useState<FormErrors>({});
 
   const setField = (field: keyof HotelForm, value: any) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    formRef.current = { ...formRef.current, [field]: value };
+    setForm(formRef.current);
     if (errors[field as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
@@ -43,24 +46,21 @@ export function useHotelForm(initial?: any) {
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
+    const f = formRef.current;
 
-    if (!form.name.trim()) {
+    if (!f.name.trim()) {
       newErrors.name = "El nombre del hotel es obligatorio";
     }
-
-    if (!form.country.trim()) {
+    if (!f.country.trim()) {
       newErrors.country = "El país es obligatorio";
     }
-
-    if (!form.city.trim()) {
+    if (!f.city.trim()) {
       newErrors.city = "La ciudad es obligatoria";
     }
-
-    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+    if (f.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) {
       newErrors.email = "El email no tiene un formato válido";
     }
-
-    if (form.stars < 1 || form.stars > 5) {
+    if (f.stars < 1 || f.stars > 5) {
       newErrors.stars = "Las estrellas deben estar entre 1 y 5";
     }
 

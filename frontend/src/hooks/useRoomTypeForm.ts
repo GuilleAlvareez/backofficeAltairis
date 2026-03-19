@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 interface RoomTypeForm {
   name: string;
@@ -15,17 +15,20 @@ interface FormErrors {
 }
 
 export function useRoomTypeForm(initial?: any) {
-  const [form, setForm] = useState<RoomTypeForm>({
+  const formRef = useRef<RoomTypeForm>({
     name: initial?.name ?? "",
     description: initial?.description ?? "",
     capacity: initial?.capacity ?? 2,
     pricePerNight: initial?.pricePerNight ?? "",
     active: initial?.active ?? true,
   });
+
+  const [form, setForm] = useState<RoomTypeForm>(formRef.current);
   const [errors, setErrors] = useState<FormErrors>({});
 
   const setField = (field: keyof RoomTypeForm, value: any) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    formRef.current = { ...formRef.current, [field]: value };
+    setForm(formRef.current);
     if (errors[field as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
@@ -33,16 +36,15 @@ export function useRoomTypeForm(initial?: any) {
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
+    const f = formRef.current;
 
-    if (!form.name.trim()) {
+    if (!f.name.trim()) {
       newErrors.name = "El nombre de la habitación es obligatorio";
     }
-
-    if (form.capacity < 1) {
+    if (f.capacity < 1) {
       newErrors.capacity = "La capacidad debe ser al menos 1";
     }
-
-    if (form.pricePerNight && Number(form.pricePerNight) <= 0) {
+    if (f.pricePerNight && Number(f.pricePerNight) <= 0) {
       newErrors.pricePerNight = "El precio debe ser mayor que 0";
     }
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 interface ReservationForm {
   guestName: string;
@@ -19,7 +19,7 @@ interface FormErrors {
   numberOfRooms?: string;
 }
 
-const initialForm: ReservationForm = {
+const initialValues: ReservationForm = {
   guestName: "",
   guestEmail: "",
   guestPhone: "",
@@ -31,11 +31,14 @@ const initialForm: ReservationForm = {
 };
 
 export function useReservationForm() {
-  const [form, setForm] = useState<ReservationForm>(initialForm);
+  const formRef = useRef<ReservationForm>({ ...initialValues });
+
+  const [form, setForm] = useState<ReservationForm>(formRef.current);
   const [errors, setErrors] = useState<FormErrors>({});
 
   const setField = (field: keyof ReservationForm, value: any) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    formRef.current = { ...formRef.current, [field]: value };
+    setForm(formRef.current);
     if (errors[field as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
@@ -43,37 +46,33 @@ export function useReservationForm() {
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
+    const f = formRef.current;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    if (!form.guestName.trim()) {
+    if (!f.guestName.trim()) {
       newErrors.guestName = "El nombre del huésped es obligatorio";
-    } else if (form.guestName.trim().length < 3) {
-      newErrors.guestName = "El nombre debe tener al menos 3 caracteres";
     }
 
-    if (!form.guestEmail.trim()) {
+    if (!f.guestEmail.trim()) {
       newErrors.guestEmail = "El email es obligatorio";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.guestEmail)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.guestEmail)) {
       newErrors.guestEmail = "El email no tiene un formato válido";
     }
 
-    if (!form.checkIn) {
+    if (!f.checkIn) {
       newErrors.checkIn = "La fecha de check-in es obligatoria";
-    } else if (new Date(form.checkIn) < today) {
+    } else if (new Date(f.checkIn) < today) {
       newErrors.checkIn = "El check-in no puede ser en el pasado";
     }
 
-    if (!form.checkOut) {
+    if (!f.checkOut) {
       newErrors.checkOut = "La fecha de check-out es obligatoria";
-    } else if (
-      form.checkIn &&
-      new Date(form.checkOut) <= new Date(form.checkIn)
-    ) {
+    } else if (f.checkIn && new Date(f.checkOut) <= new Date(f.checkIn)) {
       newErrors.checkOut = "El check-out debe ser posterior al check-in";
     }
 
-    if (form.numberOfRooms < 1) {
+    if (f.numberOfRooms < 1) {
       newErrors.numberOfRooms = "Debe haber al menos 1 habitación";
     }
 
@@ -82,7 +81,8 @@ export function useReservationForm() {
   };
 
   const reset = () => {
-    setForm(initialForm);
+    formRef.current = { ...initialValues };
+    setForm(formRef.current);
     setErrors({});
   };
 

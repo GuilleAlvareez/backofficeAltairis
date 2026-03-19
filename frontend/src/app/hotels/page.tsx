@@ -6,9 +6,11 @@ import {
   updateHotel,
   deleteHotel,
   getAllHotels,
-} from "../services/hotels";
+} from "../../services/hotels";
 import { Plus, Search, Pencil, Trash2, Star } from "lucide-react";
 import HotelModal from "./components/HotelModal";
+import { useToast } from "@/hooks/useToast";
+import Toast from "@/components/ui/Toast";
 
 export default function HotelsPage() {
   const [hotels, setHotels] = useState<any[]>([]);
@@ -18,6 +20,7 @@ export default function HotelsPage() {
   const [totalPages, setTotalPages] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
+  const { toast, showToast, hideToast } = useToast();
 
   const load = async () => {
     setLoading(true);
@@ -42,20 +45,31 @@ export default function HotelsPage() {
   );
 
   const handleSave = async (data: any) => {
-    if (editing) {
-      await updateHotel(editing.id, data);
-    } else {
-      await createHotel(data);
+    try {
+      if (editing) {
+        await updateHotel(editing.id, data);
+        showToast("Hotel actualizado correctamente", "success");
+      } else {
+        await createHotel(data);
+        showToast("Hotel creado correctamente", "success");
+      }
+      setModalOpen(false);
+      setEditing(null);
+      load();
+    } catch {
+      showToast("Error al guardar el hotel", "error");
     }
-    setModalOpen(false);
-    setEditing(null);
-    load();
   };
 
   const handleDelete = async (id: number) => {
     if (!confirm("¿Seguro que quieres eliminar este hotel?")) return;
-    await deleteHotel(id);
-    load();
+    try {
+      await deleteHotel(id);
+      showToast("Hotel eliminado correctamente", "success");
+      load();
+    } catch {
+      showToast("Error al eliminar el hotel", "error");
+    }
   };
 
   const handleEdit = (hotel: any) => {
@@ -303,6 +317,10 @@ export default function HotelsPage() {
             setEditing(null);
           }}
         />
+      )}
+
+      {toast && (
+        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
       )}
     </div>
   );

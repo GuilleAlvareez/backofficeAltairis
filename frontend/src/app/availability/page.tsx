@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import {
   getAvailabilityByHotel,
   saveAvailability,
-} from "../services/availability";
-import { getAllHotels } from "../services/hotels";
-import { getRoomTypes } from "../services/roomTypes";
+} from "../../services/availability";
+import { getAllHotels } from "../../services/hotels";
+import { getRoomTypes } from "../../services/roomTypes";
 import { Plus, Calendar } from "lucide-react";
 import AvailabilityModal from "./components/AvailabilityModal";
 

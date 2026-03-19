@@ -5,10 +5,12 @@ import {
   getReservations,
   updateReservationStatus,
   deleteReservation,
-} from "../services/reservations";
-import { getAllHotels } from "../services/hotels";
+} from "../../services/reservations";
+import { getAllHotels } from "../../services/hotels";
 import { Plus, Search, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import ReservationModal from "./components/ReservationModal";
+import { useToast } from "@/hooks/useToast";
+import Toast from "@/components/ui/Toast";
 
 const STATUS_LABELS: Record<string, string> = {
   CONFIRMED: "Confirmada",
@@ -34,6 +36,7 @@ export default function ReservationsPage() {
   const [page, setPage] = useState(0);
   const [filterStatus, setFilterStatus] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+  const { toast, showToast, hideToast } = useToast();
 
   const load = async () => {
     setLoading(true);
@@ -83,8 +86,13 @@ export default function ReservationsPage() {
 
   const handleDelete = async (id: number) => {
     if (!confirm("¿Seguro que quieres eliminar esta reserva?")) return;
-    await deleteReservation(id);
-    load();
+    try {
+      await deleteReservation(id);
+      showToast("Reserva eliminada correctamente", "success");
+      load();
+    } catch {
+      showToast("Error al eliminar la reserva", "error");
+    }
   };
 
   return (
@@ -347,6 +355,10 @@ export default function ReservationsPage() {
           }}
           onClose={() => setModalOpen(false)}
         />
+      )}
+
+      {toast && (
+        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
       )}
     </div>
   );

@@ -6,10 +6,21 @@ import {
   createRoomType,
   updateRoomType,
   deleteRoomType,
-} from "../services/roomTypes";
-import { getAllHotels } from "../services/hotels";
-import { Plus, Search, Pencil, Trash2 } from "lucide-react";
+} from "@/services/roomTypes";
+import { getAllHotels } from "@/services/hotels";
+import {
+  Plus,
+  Search,
+  Pencil,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import RoomTypeModal from "./components/RoomTypeModal";
+import Toast from "@/components/ui/Toast";
+import { useToast } from "@/hooks/useToast";
+
+const ITEMS_PER_PAGE = 10;
 
 export default function RoomTypesPage() {
   const [roomTypes, setRoomTypes] = useState<any[]>([]);
@@ -17,8 +28,10 @@ export default function RoomTypesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterHotel, setFilterHotel] = useState("");
+  const [page, setPage] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
+  const { toast, showToast, hideToast } = useToast();
 
   const load = async () => {
     setLoading(true);
@@ -37,29 +50,47 @@ export default function RoomTypesPage() {
   useEffect(() => {
     load();
   }, [filterHotel]);
+  useEffect(() => {
+    setPage(0);
+  }, [search, filterHotel]);
 
   const filtered = roomTypes.filter(
     (rt) =>
       rt.name.toLowerCase().includes(search.toLowerCase()) ||
-      rt.hotelName?.toLowerCase().includes(search.toLowerCase()),
+      rt.hotel?.name?.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginated = filtered.slice(
+    page * ITEMS_PER_PAGE,
+    (page + 1) * ITEMS_PER_PAGE,
   );
 
   const handleSave = async (data: any, hotelId: number) => {
-    if (editing) {
-      await updateRoomType(editing.id, data);
-    } else {
-      await createRoomType(data, hotelId);
+    try {
+      if (editing) {
+        await updateRoomType(editing.id, data);
+      } else {
+        await createRoomType(data, hotelId);
+      }
+      setModalOpen(false);
+      setEditing(null);
+      load();
+    } catch {
+      showToast("Error al guardar la habitación", "error");
     }
-    setModalOpen(false);
-    setEditing(null);
-    load();
   };
 
   const handleDelete = async (id: number) => {
     if (!confirm("¿Seguro que quieres eliminar este tipo de habitación?"))
       return;
-    await deleteRoomType(id);
-    load();
+    try {
+      await deleteRoomType(id);
+      showToast("Habitación eliminada correctamente", "success");
+      load();
+    } catch {
+      showToast("Error al eliminar la habitación", "error");
+    }
   };
 
   return (
@@ -158,7 +189,7 @@ export default function RoomTypesPage() {
                   Cargando habitaciones...
                 </td>
               </tr>
-            ) : filtered.length === 0 ? (
+            ) : paginated.length === 0 ? (
               <tr>
                 <td
                   colSpan={6}
@@ -169,7 +200,7 @@ export default function RoomTypesPage() {
                 </td>
               </tr>
             ) : (
-              filtered.map((rt) => (
+              paginated.map((rt) => (
                 <tr
                   key={rt.id}
                   style={{ borderBottom: "1px solid #F1F5F9" }}
@@ -269,6 +300,43 @@ export default function RoomTypesPage() {
             )}
           </tbody>
         </table>
+
+        {/* Paginación */}
+        <div
+          className="flex items-center justify-between px-4 py-3"
+          style={{ borderTop: "1px solid #E2E8F0" }}
+        >
+          <span className="text-xs" style={{ color: "#64748B" }}>
+            {filtered.length} habitaciones en total
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0}
+              className="p-1.5 rounded-lg"
+              style={{
+                color: page === 0 ? "#CBD5E1" : "#64748B",
+                border: "1px solid #E2E8F0",
+              }}
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <span className="text-xs" style={{ color: "#64748B" }}>
+              {page + 1} / {totalPages || 1}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={page >= totalPages - 1}
+              className="p-1.5 rounded-lg"
+              style={{
+                color: page >= totalPages - 1 ? "#CBD5E1" : "#64748B",
+                border: "1px solid #E2E8F0",
+              }}
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
+        </div>
       </div>
 
       {modalOpen && (
@@ -281,6 +349,10 @@ export default function RoomTypesPage() {
             setEditing(null);
           }}
         />
+      )}
+
+      {toast && (
+        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
       )}
     </div>
   );

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
-import { getRoomTypes } from "../../services/roomTypes";
+import { getRoomTypes } from "../../../services/roomTypes";
 
 interface Props {
   hotels: any[];

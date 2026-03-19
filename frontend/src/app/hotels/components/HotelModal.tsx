@@ -1,33 +1,34 @@
 "use client";
 
-import { useState } from "react";
 import { X } from "lucide-react";
+import { useHotelForm } from "@/hooks/useHotelForm";
+import Toast from "@/components/ui/Toast";
+import { useToast } from "@/hooks/useToast";
 
 interface Props {
   hotel?: any;
-  onSave: (data: any) => void;
+  onSave: (data: any) => Promise<void>;
   onClose: () => void;
 }
 
 export default function HotelModal({ hotel, onSave, onClose }: Props) {
-  const [form, setForm] = useState({
-    name: hotel?.name ?? "",
-    country: hotel?.country ?? "",
-    city: hotel?.city ?? "",
-    address: hotel?.address ?? "",
-    stars: hotel?.stars ?? 5,
-    category: hotel?.category ?? "",
-    phone: hotel?.phone ?? "",
-    email: hotel?.email ?? "",
-    active: hotel?.active ?? true,
-  });
+  const { form, errors, setField, validate } = useHotelForm(hotel);
+  const { toast, showToast, hideToast } = useToast();
 
-  const set = (field: string, value: any) =>
-    setForm((prev) => ({ ...prev, [field]: value }));
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(form);
+    if (!validate()) return;
+    try {
+      await onSave(form);
+      showToast(
+        hotel
+          ? "Hotel actualizado correctamente"
+          : "Hotel creado correctamente",
+        "success",
+      );
+    } catch {
+      showToast("Error al guardar el hotel. Inténtalo de nuevo.", "error");
+    }
   };
 
   return (
@@ -39,7 +40,6 @@ export default function HotelModal({ hotel, onSave, onClose }: Props) {
         className="w-full max-w-lg rounded-xl shadow-xl"
         style={{ backgroundColor: "white" }}
       >
-        {/* Header */}
         <div
           className="flex items-center justify-between px-6 py-4"
           style={{ borderBottom: "1px solid #E2E8F0" }}
@@ -47,16 +47,11 @@ export default function HotelModal({ hotel, onSave, onClose }: Props) {
           <h3 className="text-base font-semibold" style={{ color: "#1E293B" }}>
             {hotel ? "Editar Hotel" : "Nuevo Hotel"}
           </h3>
-          <button
-            onClick={onClose}
-            className="p-1 rounded"
-            style={{ color: "#94A3B8" }}
-          >
+          <button onClick={onClose} style={{ color: "#94A3B8" }}>
             <X size={18} />
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
@@ -67,13 +62,21 @@ export default function HotelModal({ hotel, onSave, onClose }: Props) {
                 Nombre *
               </label>
               <input
-                required
                 value={form.name}
-                onChange={(e) => set("name", e.target.value)}
+                onChange={(e) => setField("name", e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ border: "1px solid #E2E8F0", color: "#1E293B" }}
+                style={{
+                  border: `1px solid ${errors.name ? "#EF4444" : "#E2E8F0"}`,
+                  color: "#1E293B",
+                }}
               />
+              {errors.name && (
+                <p className="text-xs mt-1" style={{ color: "#EF4444" }}>
+                  {errors.name}
+                </p>
+              )}
             </div>
+
             <div>
               <label
                 className="block text-xs font-medium mb-1"
@@ -82,13 +85,21 @@ export default function HotelModal({ hotel, onSave, onClose }: Props) {
                 País *
               </label>
               <input
-                required
                 value={form.country}
-                onChange={(e) => set("country", e.target.value)}
+                onChange={(e) => setField("country", e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ border: "1px solid #E2E8F0", color: "#1E293B" }}
+                style={{
+                  border: `1px solid ${errors.country ? "#EF4444" : "#E2E8F0"}`,
+                  color: "#1E293B",
+                }}
               />
+              {errors.country && (
+                <p className="text-xs mt-1" style={{ color: "#EF4444" }}>
+                  {errors.country}
+                </p>
+              )}
             </div>
+
             <div>
               <label
                 className="block text-xs font-medium mb-1"
@@ -97,13 +108,21 @@ export default function HotelModal({ hotel, onSave, onClose }: Props) {
                 Ciudad *
               </label>
               <input
-                required
                 value={form.city}
-                onChange={(e) => set("city", e.target.value)}
+                onChange={(e) => setField("city", e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ border: "1px solid #E2E8F0", color: "#1E293B" }}
+                style={{
+                  border: `1px solid ${errors.city ? "#EF4444" : "#E2E8F0"}`,
+                  color: "#1E293B",
+                }}
               />
+              {errors.city && (
+                <p className="text-xs mt-1" style={{ color: "#EF4444" }}>
+                  {errors.city}
+                </p>
+              )}
             </div>
+
             <div className="col-span-2">
               <label
                 className="block text-xs font-medium mb-1"
@@ -113,11 +132,12 @@ export default function HotelModal({ hotel, onSave, onClose }: Props) {
               </label>
               <input
                 value={form.address}
-                onChange={(e) => set("address", e.target.value)}
+                onChange={(e) => setField("address", e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: "1px solid #E2E8F0", color: "#1E293B" }}
               />
             </div>
+
             <div>
               <label
                 className="block text-xs font-medium mb-1"
@@ -127,11 +147,12 @@ export default function HotelModal({ hotel, onSave, onClose }: Props) {
               </label>
               <input
                 value={form.category}
-                onChange={(e) => set("category", e.target.value)}
+                onChange={(e) => setField("category", e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: "1px solid #E2E8F0", color: "#1E293B" }}
               />
             </div>
+
             <div>
               <label
                 className="block text-xs font-medium mb-1"
@@ -141,9 +162,12 @@ export default function HotelModal({ hotel, onSave, onClose }: Props) {
               </label>
               <select
                 value={form.stars}
-                onChange={(e) => set("stars", Number(e.target.value))}
+                onChange={(e) => setField("stars", Number(e.target.value))}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ border: "1px solid #E2E8F0", color: "#1E293B" }}
+                style={{
+                  border: `1px solid ${errors.stars ? "#EF4444" : "#E2E8F0"}`,
+                  color: "#1E293B",
+                }}
               >
                 {[1, 2, 3, 4, 5].map((s) => (
                   <option key={s} value={s}>
@@ -151,7 +175,13 @@ export default function HotelModal({ hotel, onSave, onClose }: Props) {
                   </option>
                 ))}
               </select>
+              {errors.stars && (
+                <p className="text-xs mt-1" style={{ color: "#EF4444" }}>
+                  {errors.stars}
+                </p>
+              )}
             </div>
+
             <div>
               <label
                 className="block text-xs font-medium mb-1"
@@ -161,11 +191,12 @@ export default function HotelModal({ hotel, onSave, onClose }: Props) {
               </label>
               <input
                 value={form.phone}
-                onChange={(e) => set("phone", e.target.value)}
+                onChange={(e) => setField("phone", e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: "1px solid #E2E8F0", color: "#1E293B" }}
               />
             </div>
+
             <div>
               <label
                 className="block text-xs font-medium mb-1"
@@ -176,17 +207,26 @@ export default function HotelModal({ hotel, onSave, onClose }: Props) {
               <input
                 type="email"
                 value={form.email}
-                onChange={(e) => set("email", e.target.value)}
+                onChange={(e) => setField("email", e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ border: "1px solid #E2E8F0", color: "#1E293B" }}
+                style={{
+                  border: `1px solid ${errors.email ? "#EF4444" : "#E2E8F0"}`,
+                  color: "#1E293B",
+                }}
               />
+              {errors.email && (
+                <p className="text-xs mt-1" style={{ color: "#EF4444" }}>
+                  {errors.email}
+                </p>
+              )}
             </div>
+
             <div className="col-span-2 flex items-center gap-2">
               <input
                 type="checkbox"
                 id="active"
                 checked={form.active}
-                onChange={(e) => set("active", e.target.checked)}
+                onChange={(e) => setField("active", e.target.checked)}
               />
               <label
                 htmlFor="active"
@@ -198,7 +238,6 @@ export default function HotelModal({ hotel, onSave, onClose }: Props) {
             </div>
           </div>
 
-          {/* Botones */}
           <div className="flex justify-end gap-3 pt-2">
             <button
               type="button"
@@ -218,6 +257,10 @@ export default function HotelModal({ hotel, onSave, onClose }: Props) {
           </div>
         </form>
       </div>
+
+      {toast && (
+        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
+      )}
     </div>
   );
 }

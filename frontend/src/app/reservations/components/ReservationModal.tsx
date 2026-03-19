@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
-import { getRoomTypes } from "../../services/roomTypes";
-import { createReservation } from "../../services/reservations";
+import { useReservationForm } from "@/hooks/useReservationForm";
+import Toast from "@/components/ui/Toast";
+import { useToast } from "@/hooks/useToast";
+import { getRoomTypes } from "@/services/roomTypes";
+import { createReservation } from "@/services/reservations";
 
 interface Props {
   hotels: any[];
@@ -12,23 +15,16 @@ interface Props {
 }
 
 export default function ReservationModal({ hotels, onSave, onClose }: Props) {
+  const { form, errors, setField, validate, reset } = useReservationForm();
+  const { toast, showToast, hideToast } = useToast();
   const [hotelId, setHotelId] = useState<number>(hotels[0]?.id ?? 0);
   const [roomTypes, setRoomTypes] = useState<any[]>([]);
   const [roomTypeId, setRoomTypeId] = useState<number>(0);
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({
-    guestName: "",
-    guestEmail: "",
-    guestPhone: "",
-    checkIn: "",
-    checkOut: "",
-    numberOfRooms: 1,
-    notes: "",
-    status: "CONFIRMED",
-  });
 
-  const set = (field: string, value: any) =>
-    setForm((prev) => ({ ...prev, [field]: value }));
+  useEffect(() => {
+    if (hotels[0]) handleHotelChange(hotels[0].id);
+  }, []);
 
   const handleHotelChange = async (id: number) => {
     setHotelId(id);
@@ -37,16 +33,17 @@ export default function ReservationModal({ hotels, onSave, onClose }: Props) {
     setRoomTypeId(rts[0]?.id ?? 0);
   };
 
-  useState(() => {
-    if (hotels[0]) handleHotelChange(hotels[0].id);
-  });
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate()) return;
     setLoading(true);
     try {
       await createReservation(form, roomTypeId);
-      onSave();
+      showToast("Reserva creada correctamente", "success");
+      reset();
+      setTimeout(onSave, 1500);
+    } catch {
+      showToast("Error al crear la reserva. Inténtalo de nuevo.", "error");
     } finally {
       setLoading(false);
     }
@@ -121,7 +118,7 @@ export default function ReservationModal({ hotels, onSave, onClose }: Props) {
             </div>
           </div>
 
-          {/* Huésped */}
+          {/* Nombre */}
           <div>
             <label
               className="block text-xs font-medium mb-1"
@@ -130,13 +127,22 @@ export default function ReservationModal({ hotels, onSave, onClose }: Props) {
               Nombre huésped *
             </label>
             <input
-              required
               value={form.guestName}
-              onChange={(e) => set("guestName", e.target.value)}
+              onChange={(e) => setField("guestName", e.target.value)}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-              style={{ border: "1px solid #E2E8F0", color: "#1E293B" }}
+              style={{
+                border: `1px solid ${errors.guestName ? "#EF4444" : "#E2E8F0"}`,
+                color: "#1E293B",
+              }}
             />
+            {errors.guestName && (
+              <p className="text-xs mt-1" style={{ color: "#EF4444" }}>
+                {errors.guestName}
+              </p>
+            )}
           </div>
+
+          {/* Email y teléfono */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label
@@ -146,13 +152,19 @@ export default function ReservationModal({ hotels, onSave, onClose }: Props) {
                 Email *
               </label>
               <input
-                required
-                type="email"
                 value={form.guestEmail}
-                onChange={(e) => set("guestEmail", e.target.value)}
+                onChange={(e) => setField("guestEmail", e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ border: "1px solid #E2E8F0", color: "#1E293B" }}
+                style={{
+                  border: `1px solid ${errors.guestEmail ? "#EF4444" : "#E2E8F0"}`,
+                  color: "#1E293B",
+                }}
               />
+              {errors.guestEmail && (
+                <p className="text-xs mt-1" style={{ color: "#EF4444" }}>
+                  {errors.guestEmail}
+                </p>
+              )}
             </div>
             <div>
               <label
@@ -163,7 +175,7 @@ export default function ReservationModal({ hotels, onSave, onClose }: Props) {
               </label>
               <input
                 value={form.guestPhone}
-                onChange={(e) => set("guestPhone", e.target.value)}
+                onChange={(e) => setField("guestPhone", e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: "1px solid #E2E8F0", color: "#1E293B" }}
               />
@@ -180,13 +192,20 @@ export default function ReservationModal({ hotels, onSave, onClose }: Props) {
                 Check-in *
               </label>
               <input
-                required
                 type="date"
                 value={form.checkIn}
-                onChange={(e) => set("checkIn", e.target.value)}
+                onChange={(e) => setField("checkIn", e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ border: "1px solid #E2E8F0", color: "#1E293B" }}
+                style={{
+                  border: `1px solid ${errors.checkIn ? "#EF4444" : "#E2E8F0"}`,
+                  color: "#1E293B",
+                }}
               />
+              {errors.checkIn && (
+                <p className="text-xs mt-1" style={{ color: "#EF4444" }}>
+                  {errors.checkIn}
+                </p>
+              )}
             </div>
             <div>
               <label
@@ -196,13 +215,20 @@ export default function ReservationModal({ hotels, onSave, onClose }: Props) {
                 Check-out *
               </label>
               <input
-                required
                 type="date"
                 value={form.checkOut}
-                onChange={(e) => set("checkOut", e.target.value)}
+                onChange={(e) => setField("checkOut", e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ border: "1px solid #E2E8F0", color: "#1E293B" }}
+                style={{
+                  border: `1px solid ${errors.checkOut ? "#EF4444" : "#E2E8F0"}`,
+                  color: "#1E293B",
+                }}
               />
+              {errors.checkOut && (
+                <p className="text-xs mt-1" style={{ color: "#EF4444" }}>
+                  {errors.checkOut}
+                </p>
+              )}
             </div>
           </div>
 
@@ -219,10 +245,20 @@ export default function ReservationModal({ hotels, onSave, onClose }: Props) {
                 type="number"
                 min={1}
                 value={form.numberOfRooms}
-                onChange={(e) => set("numberOfRooms", Number(e.target.value))}
+                onChange={(e) =>
+                  setField("numberOfRooms", Number(e.target.value))
+                }
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ border: "1px solid #E2E8F0", color: "#1E293B" }}
+                style={{
+                  border: `1px solid ${errors.numberOfRooms ? "#EF4444" : "#E2E8F0"}`,
+                  color: "#1E293B",
+                }}
               />
+              {errors.numberOfRooms && (
+                <p className="text-xs mt-1" style={{ color: "#EF4444" }}>
+                  {errors.numberOfRooms}
+                </p>
+              )}
             </div>
             <div>
               <label
@@ -233,7 +269,7 @@ export default function ReservationModal({ hotels, onSave, onClose }: Props) {
               </label>
               <select
                 value={form.status}
-                onChange={(e) => set("status", e.target.value)}
+                onChange={(e) => setField("status", e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: "1px solid #E2E8F0", color: "#1E293B" }}
               >
@@ -255,7 +291,7 @@ export default function ReservationModal({ hotels, onSave, onClose }: Props) {
             </label>
             <textarea
               value={form.notes}
-              onChange={(e) => set("notes", e.target.value)}
+              onChange={(e) => setField("notes", e.target.value)}
               rows={2}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
               style={{ border: "1px solid #E2E8F0", color: "#1E293B" }}
@@ -282,6 +318,10 @@ export default function ReservationModal({ hotels, onSave, onClose }: Props) {
           </div>
         </form>
       </div>
+
+      {toast && (
+        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getDashboardStats } from "./services/reservations";
+import { getDashboardStats } from "../services/reservations";
 import {
   Hotel,
   BookOpen,

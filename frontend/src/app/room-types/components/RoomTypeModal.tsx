@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import { useRoomTypeForm } from "@/hooks/useRoomTypeForm";
+import Toast from "@/components/ui/Toast";
+import { useToast } from "@/hooks/useToast";
 
 interface Props {
   roomType?: any;
   hotels: any[];
-  onSave: (data: any, hotelId: number) => void;
+  onSave: (data: any, hotelId: number) => Promise<void>;
   onClose: () => void;
 }
 
@@ -16,23 +19,26 @@ export default function RoomTypeModal({
   onSave,
   onClose,
 }: Props) {
-  const [form, setForm] = useState({
-    name: roomType?.name ?? "",
-    description: roomType?.description ?? "",
-    capacity: roomType?.capacity ?? 2,
-    pricePerNight: roomType?.pricePerNight ?? "",
-    active: roomType?.active ?? true,
-  });
+  const { form, errors, setField, validate } = useRoomTypeForm(roomType);
+  const { toast, showToast, hideToast } = useToast();
   const [hotelId, setHotelId] = useState<number>(
     roomType?.hotel?.id ?? hotels[0]?.id ?? 0,
   );
 
-  const set = (field: string, value: any) =>
-    setForm((prev) => ({ ...prev, [field]: value }));
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(form, hotelId);
+    if (!validate()) return;
+    try {
+      await onSave(form, hotelId);
+      showToast(
+        roomType
+          ? "Habitación actualizada correctamente"
+          : "Habitación creada correctamente",
+        "success",
+      );
+    } catch {
+      showToast("Error al guardar la habitación. Inténtalo de nuevo.", "error");
+    }
   };
 
   return (
@@ -67,9 +73,9 @@ export default function RoomTypeModal({
             <select
               value={hotelId}
               onChange={(e) => setHotelId(Number(e.target.value))}
+              disabled={!!roomType}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none"
               style={{ border: "1px solid #E2E8F0", color: "#1E293B" }}
-              disabled={!!roomType}
             >
               {hotels.map((h) => (
                 <option key={h.id} value={h.id}>
@@ -78,6 +84,7 @@ export default function RoomTypeModal({
               ))}
             </select>
           </div>
+
           <div>
             <label
               className="block text-xs font-medium mb-1"
@@ -86,13 +93,21 @@ export default function RoomTypeModal({
               Nombre *
             </label>
             <input
-              required
               value={form.name}
-              onChange={(e) => set("name", e.target.value)}
+              onChange={(e) => setField("name", e.target.value)}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-              style={{ border: "1px solid #E2E8F0", color: "#1E293B" }}
+              style={{
+                border: `1px solid ${errors.name ? "#EF4444" : "#E2E8F0"}`,
+                color: "#1E293B",
+              }}
             />
+            {errors.name && (
+              <p className="text-xs mt-1" style={{ color: "#EF4444" }}>
+                {errors.name}
+              </p>
+            )}
           </div>
+
           <div>
             <label
               className="block text-xs font-medium mb-1"
@@ -102,12 +117,13 @@ export default function RoomTypeModal({
             </label>
             <textarea
               value={form.description}
-              onChange={(e) => set("description", e.target.value)}
+              onChange={(e) => setField("description", e.target.value)}
               rows={2}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
               style={{ border: "1px solid #E2E8F0", color: "#1E293B" }}
             />
           </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label
@@ -120,10 +136,18 @@ export default function RoomTypeModal({
                 type="number"
                 min={1}
                 value={form.capacity}
-                onChange={(e) => set("capacity", Number(e.target.value))}
+                onChange={(e) => setField("capacity", Number(e.target.value))}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ border: "1px solid #E2E8F0", color: "#1E293B" }}
+                style={{
+                  border: `1px solid ${errors.capacity ? "#EF4444" : "#E2E8F0"}`,
+                  color: "#1E293B",
+                }}
               />
+              {errors.capacity && (
+                <p className="text-xs mt-1" style={{ color: "#EF4444" }}>
+                  {errors.capacity}
+                </p>
+              )}
             </div>
             <div>
               <label
@@ -137,18 +161,27 @@ export default function RoomTypeModal({
                 min={0}
                 step="0.01"
                 value={form.pricePerNight}
-                onChange={(e) => set("pricePerNight", e.target.value)}
+                onChange={(e) => setField("pricePerNight", e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ border: "1px solid #E2E8F0", color: "#1E293B" }}
+                style={{
+                  border: `1px solid ${errors.pricePerNight ? "#EF4444" : "#E2E8F0"}`,
+                  color: "#1E293B",
+                }}
               />
+              {errors.pricePerNight && (
+                <p className="text-xs mt-1" style={{ color: "#EF4444" }}>
+                  {errors.pricePerNight}
+                </p>
+              )}
             </div>
           </div>
+
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
               id="active"
               checked={form.active}
-              onChange={(e) => set("active", e.target.checked)}
+              onChange={(e) => setField("active", e.target.checked)}
             />
             <label
               htmlFor="active"
@@ -178,6 +211,10 @@ export default function RoomTypeModal({
           </div>
         </form>
       </div>
+
+      {toast && (
+        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
+      )}
     </div>
   );
 }

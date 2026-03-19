@@ -6,6 +6,9 @@ import Header from "@/components/layout/Header";
 export const metadata: Metadata = {
   title: "Altairis Backoffice",
   description: "Backoffice operativo de Viajes Altairis",
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 export default function RootLayout({
